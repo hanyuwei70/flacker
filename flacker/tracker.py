@@ -10,49 +10,56 @@
 """
 
 import os
-import cgi
 import socket
+from urllib.parse import parse_qs
 from binascii import b2a_hex
 from struct import pack
 
 from flask import Blueprint, request, abort, send_file
 from flask import current_app as app
 from bencode import bencode
-from .redis import redis
+from .redisdata import redis
+
 
 def announce_interval():
     return int(app.config.get('FLACKER_ANNOUNCE_INTERVAL', 300))
 
+
 def _get_torrent_key(info_hash):
-    return 'torrent:' + info_hash
+    return 'torrent:' + str(info_hash)
+
 
 def get_info_hash(request, multiple=False):
     if not multiple:
-        return b2a_hex(cgi.parse_qs(request.query_string)['info_hash'][0])
+        return b2a_hex(parse_qs(request.query_string)['info_hash'][0])
     else:
         hashes = set()
-        for hash in cgi.parse_qs(request.query_string)['info_hash']:
+        for hash in parse_qs(request.query_string)['info_hash']:
             hashes.add(b2a_hex(hash))
         return hashes
+
 
 def get_torrent_list(info_hash_list=None):
     if info_hash_list is None:
         info_hash_list = redis.smembers('torrents')
-    
+
     torrents = {}
     for info_hash in info_hash_list:
+        info_hash=info_hash.decode()
         torrent_key = _get_torrent_key(info_hash)
         seed_set_key = torrent_key + ':seed'
         leech_set_key = torrent_key + ':leech'
-    
+
         name, downloaded = redis.hmget(torrent_key, 'name', 'downloaded')
-        torrents[info_hash] = {
+        name = name.decode('utf-8')
+        torrents[str(info_hash)] = {
             'name': name,
-            'downloaded': int(downloaded) or 0,
-            'complete': redis.scard(seed_set_key) or 0,
-            'incomplete': redis.scard(leech_set_key) or 0,
+            'downloaded': int(downloaded or 0),
+            'complete': redis.scard(seed_set_key or 0),
+            'incomplete': redis.scard(leech_set_key or 0),
         }
     return torrents
+
 
 def babort(message):
     return bencode({
@@ -61,16 +68,17 @@ def babort(message):
     })
 
 
-tracker = Blueprint("tracker", "flacker.tracker.tracker")
+tracker = Blueprint("tracker", __name__)
+
 
 @tracker.route('/announce')
 def announce():
-    need_args = ('info_hash', 'peer_id', 'port', 'uploaded', 'downloaded', 
+    need_args = ('info_hash', 'peer_id', 'port', 'uploaded', 'downloaded',
                  'left')
     for arg in need_args:
         if arg not in request.args:
             return babort('missing argument (%s)' % arg)
-    
+
     peer_id = request.args['peer_id']
     peer_key = 'peer:%s' % peer_id
     info_hash = get_info_hash(request)
@@ -104,7 +112,7 @@ def announce():
     redis.expire(peer_key, announce_interval() + 60)
 
     if request.args.get('left', 1, int) == 0 \
-    or request.args.get('event') == 'completed':
+            or request.args.get('event') == 'completed':
         redis.sadd(seed_set_key, peer_id)
         redis.srem(leech_set_key, peer_id)
     else:
@@ -149,6 +157,7 @@ def announce():
         'peers': peers
     })
 
+
 @tracker.route('/scrape')
 def scape():
     info_hash_list = None
@@ -157,19 +166,20 @@ def scape():
         for info_hash in info_hash_list:
             if not redis.sismember('torrents', info_hash):
                 info_hash_list.remove(info_hash)
-    
+
     return bencode({'files': get_torrent_list(info_hash_list)})
+
 
 @tracker.route('/file')
 def torrent_file():
     info_hash = request.args.get('info_hash')
-    torrent_file_path = os.path.join(app.instance_path, info_hash+'.torrent')
+    torrent_file_path = os.path.join(app.instance_path, info_hash + '.torrent')
 
     if info_hash is None or not redis.sismember('torrents', info_hash) \
-    or not os.path.isfile(torrent_file_path):
+            or not os.path.isfile(torrent_file_path):
         abort(404)
 
     name = redis.hget(_get_torrent_key(info_hash), 'name') or info_hash
     filename = name + '.torrent'
-    return send_file(app.open_instance_resource(info_hash+'.torrent'), 
+    return send_file(app.open_instance_resource(info_hash + '.torrent'),
                      as_attachment=True, attachment_filename=filename)

@@ -5,6 +5,7 @@
 
 
 from setuptools import setup
+import sys
 
 setup(
     name='flacker',
@@ -22,9 +23,13 @@ setup(
         ],
     },
     install_requires=[
-        'Flask==0.9',
-        'Flask-Script==0.3.3',
-        'Flask-And-Redis==0.3.1',
-        'BitTorrent-bencode==5.0.8.1',
+        'Flask>=0.12.2',
+        'Flask-Script>=2.0.6',
+        'Flask-And-Redis>=0.7',
+        'bencode-python3==1.0.2',
+        'flask-mysql>=1.4.0',
+        'flask-login>=0.4.0'
     ]
 )
+if sys.version_info < (3,6):
+    sys.exit("Python < 3.6 is not supported")

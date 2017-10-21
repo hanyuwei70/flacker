@@ -1,4 +1,4 @@
-<html lang="en"><head>
+<html lang="cn"><head>
     <meta charset="utf-8">
     <title>flacker - BitTorrent tracker</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,31 +11,36 @@
     
     <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
     <!--[if lt IE 9]>
-      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+      <script src="https://cdn.bootcss.com/html5shiv/r29/html5.min.js"></script>
     <![endif]-->
+    <style>
+        .info_hash{
+            font-family: monospace;
+        }
+    </style>
   </head>
 
   <body>
     <div class="container">
       <div class="page-header">
-        <h1>Flacker <small>lightweight bittorrent tracker</small></h1>
+        <h1>Flacker <small>VCB-S 种子查询</small></h1>
       </div>
       
       <table id="torrents" class="table table-striped">
         <thead>
           <tr>
             <th>info hash</th>
-            <th>name</th>
-            <th>seeds</th>
-            <th>leechs</th>
-            <th>downloaded</th>
+            <th>名称(name)</th>
+            <th>做种(seeds)</th>
+            <th>下载(leechs)</th>
+            <th>完成(downloaded)</th>
             <th></th>
           </tr>
         </thead>
         <tbody>
           {% for info_hash,torrent in torrents.items() %}
           <tr>
-            <td>{{ info_hash }}</td>
+            <td class="info_hash">{{ info_hash }}</td>
             <td><strong>{{ torrent['name'] }}</strong></td>
             <td>
               {% if torrent['complete'] > 2 %}

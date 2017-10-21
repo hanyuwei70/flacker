@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="https://cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+    <title>Title</title>
+</head>
+<body>
+upload torrent
+<form method="POST">
+    <label>info_hash<input type="text" maxlength="40" minlength="40" name="info_hash"/></label>
+    <label>名称<input type="text" maxlength="255" name="name" /></label>
+    <label>或文件<input type="file" name="torrent_file" /></label>
+    <input type="submit" value="添加"/>
+</form>
+<div>
+    {% with msgs = get_flashed_messages() %}
+    {% if msgs %}
+        {% for msg in msgs %}
+        <p class="bg-danger"> {{ msg }}</p>
+        {% endfor %}
+    {% endif %}
+    {% endwith %}
+</div>
+<script src="{{ url_for('static', filename='js/jquery-1.7.2.min.js') }}"></script>
+</body>
+</html>

@@ -9,6 +9,6 @@
     :license: BSD, see LICENSE for more details.
 """
 
-from flask.ext.redis import Redis
+from flask_redis import FlaskRedis
 
-redis = Redis()
+redis = FlaskRedis()
